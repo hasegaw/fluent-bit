@@ -7,6 +7,7 @@ include_directories(include/)
 
 # Lib: mk_config
 add_subdirectory(lib/msgpack-0.5.9)
+add_subdirectory(lib/mbedtls-1.3.10)
 add_subdirectory(lib/mk_config)
 
 # Fluent Bit Core
