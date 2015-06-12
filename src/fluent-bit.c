@@ -121,6 +121,15 @@ int main(int argc, char **argv)
         switch (opt) {
         case 'c':
             cfg_file = optarg;
+
+            /* Validate config file */
+            if (access(cfg_file, R_OK) != 0) {
+                flb_utils_error(FLB_ERR_CFG_FILE);
+            }
+            config->file = mk_rconf_create(cfg_file);
+            if (!config->file) {
+                flb_utils_error(FLB_ERR_CFG_FILE_FORMAT);
+            }
             break;
         case 'f':
             config->flush = atoi(optarg);
@@ -156,17 +165,6 @@ int main(int argc, char **argv)
     /* We need an output */
     if (!cfg_output) {
         flb_utils_error(FLB_ERR_OUTPUT_UNDEF);
-    }
-
-    /* Validate config file */
-    if (cfg_file) {
-        if (access(cfg_file, R_OK) != 0) {
-            flb_utils_error(FLB_ERR_CFG_FILE);
-        }
-        config->file = mk_rconf_create(cfg_file);
-        if (!config->file) {
-            flb_utils_error(FLB_ERR_CFG_FILE_FORMAT);
-        }
     }
 
     /* Validate flush time (seconds) */
