@@ -32,6 +32,8 @@
 #include <fluent-bit/flb_config.h>
 #include <fluent-bit/flb_engine.h>
 
+int flb_engine_shutdown_requested = 0;
+
 int flb_engine_flush(struct flb_config *config,
                      struct flb_input_plugin *in_force)
 {
@@ -183,6 +185,12 @@ static int flb_engine_started(struct flb_config *config)
     return write(config->ch_notif[1], &val, sizeof(uint64_t));
 }
 
+int flb_engine_shutdown()
+{
+    /* notify flb_engine_start to shutdown gracefully */
+    flb_engine_shutdown_requested = 1;
+}
+
 int flb_engine_start(struct flb_config *config)
 {
     int fd;
@@ -267,16 +275,12 @@ int flb_engine_start(struct flb_config *config)
     /* Signal that we have started */
     flb_engine_started(config);
 
-    while (1) {
+    while (! flb_engine_shutdown_requested) {
         mk_event_wait(evl);
         mk_event_foreach(event, evl) {
             if (event->type == FLB_ENGINE_EV_CORE) {
                 ret = flb_engine_handle_event(event->fd, event->mask, config);
                 if (ret == -1) {
-                    /* Inputs exit */
-                    flb_input_exit_all(config);
-                    /* Outputs exit */
-                    flb_output_exit(config);
                     return 0;
                 }
             }
@@ -285,4 +289,9 @@ int flb_engine_start(struct flb_config *config)
             }
         }
     }
+
+    /* Inputs exit */
+    flb_input_exit_all(config);
+    /* Outputs exit */
+    flb_output_exit(config);
 }

@@ -22,6 +22,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <signal.h>
 
 #include <mk_core/mk_core.h>
 #include <fluent-bit/flb_macros.h>
@@ -32,6 +33,32 @@
 #include <fluent-bit/flb_input.h>
 #include <fluent-bit/flb_output.h>
 #include <fluent-bit/flb_engine.h>
+
+int exit_requested = 0;
+
+int flb_signal_handler(int signal)
+{
+    flb_debug("[engine] caught signal %d", signal);
+    switch (signal) {
+        case SIGINT:
+        case SIGQUIT:
+        case SIGHUP:
+        case SIGTERM:
+            flb_engine_shutdown();
+            break;
+
+        default:
+            break;
+    } 
+}
+
+void flb_signal_init()
+{
+    signal(SIGINT, (__sighandler_t) &flb_signal_handler);
+    signal(SIGQUIT, (__sighandler_t) &flb_signal_handler);
+    signal(SIGHUP, (__sighandler_t) &flb_signal_handler);
+    signal(SIGTERM, (__sighandler_t) &flb_signal_handler);
+}
 
 static void flb_help(int rc, struct flb_config *config)
 {
@@ -104,6 +131,9 @@ int main(int argc, char **argv)
         { "help",    no_argument      , NULL, 'h' },
         { NULL, 0, NULL, 0 }
     };
+
+    /* Signal handler */
+    flb_signal_init();
 
     /* Create configuration context */
     config = flb_config_init();
