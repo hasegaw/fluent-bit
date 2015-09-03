@@ -34,8 +34,6 @@
 #include <fluent-bit/flb_output.h>
 #include <fluent-bit/flb_engine.h>
 
-int exit_requested = 0;
-
 int flb_signal_handler(int signal)
 {
     flb_debug("[engine] caught signal %d", signal);
